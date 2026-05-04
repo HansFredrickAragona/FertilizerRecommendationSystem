@@ -1,7 +1,5 @@
-import streamlit as st
 import json
 from pathlib import Path
-import pandas as pd
 
 THESIS_CROP_MAP = {
     "Cabbage": "Cabbage",
