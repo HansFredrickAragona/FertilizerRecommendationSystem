@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from app_final import main as build_recommendation
+from app_final import build_recommendation 
 
 app = FastAPI(title="Rule-Based Fertilizer Recommendation API")
 
