@@ -1,11 +1,19 @@
 from typing import List, Optional
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app_final import build_recommendation 
+from app_final import build_recommendation
 
 app = FastAPI(title="Rule-Based Fertilizer Recommendation API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Example request body:
 # {
