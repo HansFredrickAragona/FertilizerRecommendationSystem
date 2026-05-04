@@ -1,0 +1,92 @@
+{
+  "module_name": "soil_ph_rule_engine",
+  "version": "3.0.0",
+  "scope": {
+    "universal": true,
+    "notes": [
+      "Single universal pH criteria applies to all crops.",
+      "Multipliers have been removed per agronomic standards (BSU La Trinidad consultation).",
+      "Perfect pH is 6.5. Acceptable range is 5.1 to 7.4.",
+      "Liming is required at pH <= 5.0. Gypsum is recommended at pH >= 7.5.",
+      "Borderline warnings are issued at pH 5.1 and pH 7.4 without triggering mandatory amendments."
+    ]
+  },
+  "purpose": "Universal pH rule engine for liming and gypsum recommendations",
+  "required_inputs": {
+    "soil_ph": "number"
+  },
+  "outputs": {
+    "ph_status": "string",
+    "ph_action": "none | liming_required | gypsum_recommended",
+    "borderline_warning": "boolean",
+    "borderline_message": "string | null",
+    "recommendation_message": "string",
+    "perfect_ph": "number"
+  },
+  "constants": {
+    "perfect_ph": 6.5,
+    "acceptable_range_min": 5.1,
+    "acceptable_range_max": 7.4,
+    "liming_trigger_ph_max": 5.0,
+    "gypsum_trigger_ph_min": 7.5,
+    "borderline_low_ph": 5.1,
+    "borderline_high_ph": 7.4
+  },
+  "ph_rules": [
+    {
+      "id": "PH_001",
+      "condition": "soil_ph <= 5.0",
+      "then": {
+        "ph_status": "acidic",
+        "ph_action": "liming_required",
+        "borderline_warning": false,
+        "borderline_message": null,
+        "recommendation_message": "Soil pH is at or below 5.0. Liming is required before planting to raise soil pH toward the ideal level of 6.5."
+      }
+    },
+    {
+      "id": "PH_002",
+      "condition": "soil_ph == 5.1",
+      "then": {
+        "ph_status": "borderline_acidic",
+        "ph_action": "none",
+        "borderline_warning": true,
+        "borderline_message": "Soil pH is at 5.1, which is borderline acidic. No liming is required at this level, but closely monitor soil pH before the next cropping season.",
+        "recommendation_message": "Soil pH is within the acceptable range but approaching the acidic threshold. Monitor closely."
+      }
+    },
+    {
+      "id": "PH_003",
+      "condition": "soil_ph > 5.1 AND soil_ph < 7.4",
+      "then": {
+        "ph_status": "acceptable",
+        "ph_action": "none",
+        "borderline_warning": false,
+        "borderline_message": null,
+        "recommendation_message": "Soil pH is within the acceptable range of 5.1 to 7.4. No soil amendment is required. The ideal pH is 6.5."
+      }
+    },
+    {
+      "id": "PH_004",
+      "condition": "soil_ph == 7.4",
+      "then": {
+        "ph_status": "borderline_alkaline",
+        "ph_action": "none",
+        "borderline_warning": true,
+        "borderline_message": "Soil pH is at 7.4, which is borderline alkaline. No gypsum is required at this level, but closely monitor soil pH before the next cropping season.",
+        "recommendation_message": "Soil pH is within the acceptable range but approaching the alkaline threshold. Monitor closely."
+      }
+    },
+    {
+      "id": "PH_005",
+      "condition": "soil_ph >= 7.5",
+      "then": {
+        "ph_status": "alkaline",
+        "ph_action": "gypsum_recommended",
+        "borderline_warning": false,
+        "borderline_message": null,
+        "recommendation_message": "Soil pH is at or above 7.5. Applying gypsum is recommended to lower soil pH toward the ideal level of 6.5."
+      }
+    }
+  ]
+}
