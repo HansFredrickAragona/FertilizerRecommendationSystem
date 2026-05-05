@@ -39,10 +39,10 @@ THESIS_CROP_MAP = {
     "Black Pepper": "Black Pepper",
     "Eggplant": "Eggplant",
     "Okra (Local)": "Okra (Local)",
-    "Oka (Hybrid)": "Oka (Hybrid)",
+    "Okra (Hybrid)": "Okra (Hybrid)",
     "Tomato": "tomatoes",
     "tomatoes": "tomatoes",
-    "SQUASH": "SQUASH",
+    "Squash": "Squash",
     "Basil": "Basil",
     "Mint herb": "Mint herb"
 }
