@@ -188,7 +188,10 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     """
     results = []
     max_target = max(t_n, t_p, t_k)
+    if max_target <= 0:
+        return []
     precision = 3 if max_target < 1.0 else rules["constraints"]["precision_decimals"]
+    
     allow_over = rules["constraints"]["allow_over_fertilization"]
 
     n_fillers = [f for f in inventory if f["n"] > 0 and f["p"] == 0 and f["k"] == 0]
