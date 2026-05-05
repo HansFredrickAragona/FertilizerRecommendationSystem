@@ -168,7 +168,6 @@ def run_ph_engine(data, ph_rules):
     result["perfect_ph"] = perfect_ph
     return result
 
-
 def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     """Generate fertilizer mix options based on target nutrient requirements.
 
@@ -188,77 +187,77 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
         list: Sorted fertilizer combination results limited by rule constraints.
     """
     results = []
-    # extracts contraint rukes from engine_rules.jason
-    precision = rules["constraints"]["precision_decimals"]  # specifaclly extract preison decimla point (2)
-    allow_over = rules["constraints"]["allow_over_fertilization"] # Extracts allow_over_fertilization - False,over fert is not allowed
+    max_target = max(t_n, t_p, t_k)
+    precision = 3 if max_target < 1.0 else rules["constraints"]["precision_decimals"]
+    allow_over = rules["constraints"]["allow_over_fertilization"]
 
-    # exrtacting fertilizer with Pure N, K and P Compound & Complete
-    n_filler = next((f for f in inventory if f["n"] > 0 and f["p"] == 0 and f["k"] == 0), None)
-    k_filler = next((f for f in inventory if f["k"] > 0 and f["n"] == 0 and f["p"] == 0), None)
-    p_sources = [f for f in inventory if f["p"] > 0] # Compund & Complete
+    n_fillers = [f for f in inventory if f["n"] > 0 and f["p"] == 0 and f["k"] == 0]
+    k_fillers = [f for f in inventory if f["k"] > 0 and f["n"] == 0 and f["p"] == 0]
+    p_sources = [f for f in inventory if f["p"] > 0]
 
-    #Solving Part (Core)
     for p_fert in p_sources:
-        qty_p = (t_p / p_fert["p"]) * 100 if p_fert["p"] > 0 else 0  #Solving for Comound || Complete using p_sources
+        for n_filler in (n_fillers if n_fillers else [None]):
+            for k_filler in (k_fillers if k_fillers else [None]):
 
-        n_provided = (qty_p * p_fert["n"]) / 100
-        p_provided = (qty_p * p_fert["p"]) / 100
-        k_provided = (qty_p * p_fert["k"]) / 100
+                qty_p = (t_p / p_fert["p"]) * 100 if p_fert["p"] > 0 else 0
 
-        # Subtracting needed N & K
-        rem_n = t_n - n_provided 
-        rem_k = t_k - k_provided
-        
-        #To check whether is over fertilization or not
-        if not allow_over and (rem_n < -0.01 or rem_k < -0.01):
-            continue
+                n_provided = (qty_p * p_fert["n"]) / 100
+                p_provided = (qty_p * p_fert["p"]) / 100
+                k_provided = (qty_p * p_fert["k"]) / 100
 
-         # N filler is needed only when there is remaining N to supply
-        if rem_n > 0.01 and n_filler is None:
-            continue  # can't satisfy N requirement without a pure-N source — skip this combo
- 
-        # K filler is needed only when there is remaining K to supply
-        if rem_k > 0.01 and k_filler is None:
-            continue  # can't satisfy K requirement without a pure-K source — skip this combo
+                rem_n = t_n - n_provided
+                rem_k = t_k - k_provided
 
-        #if no over fertilizer solve the remaining N &K
-        qty_n = (max(0, rem_n) / n_filler["n"]) * 100 if rem_n > 0.01 and n_filler else 0
-        qty_k = (max(0, rem_k) / k_filler["k"]) * 100 if rem_k > 0.01 and k_filler else 0
+                if not allow_over and (rem_n < -0.01 or rem_k < -0.01):
+                    continue
 
-        total_n = n_provided + ((qty_n * n_filler["n"]) / 100 if n_filler else 0)
-        total_k = k_provided + ((qty_k * k_filler["k"]) / 100 if k_filler else 0)
+                if rem_n > 0.01 and n_filler is None:
+                    continue
 
-        fmt = rules["output_format"]
-        prescription = []
-        if qty_n > 0:
-            prescription.append(fmt.format(
-                qty=round(qty_n, precision), 
-                area=area, 
-                unit=unit_label, 
-                fertilizer_name=n_filler["name"]
-            ))
-        prescription.append(fmt.format(
-            qty=round(qty_p, precision), 
-            area=area, 
-            unit=unit_label, 
-            fertilizer_name=p_fert["name"]
-        ))
-        if qty_k > 0:
-            prescription.append(fmt.format(
-                qty=round(qty_k, precision), 
-                area=area, 
-                unit=unit_label, 
-                fertilizer_name=k_filler["name"]
-            ))
+                if rem_k > 0.01 and k_filler is None:
+                    continue
 
-        results.append({
-            "Source": p_fert["name"],
-            "Prescription": prescription,
-            "Total Weight": qty_n + qty_p + qty_k,
-            "Applied N": total_n,
-            "Applied P": p_provided,
-            "Applied K": total_k,
-        })
+                qty_n = (max(0, rem_n) / n_filler["n"]) * 100 if rem_n > 0.01 and n_filler else 0
+                qty_k = (max(0, rem_k) / k_filler["k"]) * 100 if rem_k > 0.01 and k_filler else 0
+
+                total_n = n_provided + ((qty_n * n_filler["n"]) / 100 if n_filler else 0)
+                total_k = k_provided + ((qty_k * k_filler["k"]) / 100 if k_filler else 0)
+
+                fmt = rules["output_format"]
+                prescription = []
+                if qty_n > 0:
+                    prescription.append(fmt.format(
+                        qty=round(qty_n, precision),
+                        area=area,
+                        unit=unit_label,
+                        fertilizer_name=n_filler["name"]
+                    ))
+                prescription.append(fmt.format(
+                    qty=round(qty_p, precision),
+                    area=area,
+                    unit=unit_label,
+                    fertilizer_name=p_fert["name"]
+                ))
+                if qty_k > 0:
+                    prescription.append(fmt.format(
+                        qty=round(qty_k, precision),
+                        area=area,
+                        unit=unit_label,
+                        fertilizer_name=k_filler["name"]
+                    ))
+
+                results.append({
+                    "Source": " + ".join(filter(None, [
+                        n_filler["name"] if qty_n > 0 else None,
+                        p_fert["name"],
+                        k_filler["name"] if qty_k > 0 else None,
+                    ])),
+                    "Prescription": prescription,
+                    "Total Weight": qty_n + qty_p + qty_k,
+                    "Applied N": total_n,
+                    "Applied P": p_provided,
+                    "Applied K": total_k,
+                })
 
     return sorted(results, key=lambda x: x["Total Weight"])[:rules["constraints"]["max_combinations"]]
 
@@ -344,7 +343,6 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
     }
 
 
-
 def normalize_area(raw_area, area_unit):
     """Convert user area input into hectares and derive display unit label.
 
@@ -367,7 +365,6 @@ def normalize_area(raw_area, area_unit):
     raise ValueError(
         f"Unsupported area_unit '{area_unit}'. Use 'sqm' or 'ha', or values like 'Square Meters (sqm)' or 'Hectares (ha)'."
     )
-
 
 
 def build_recommendation(crop_label, n_status, p_status, k_status, soil_ph, raw_area,
