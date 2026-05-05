@@ -453,10 +453,6 @@ def build_recommendation(crop_label, n_status, p_status, k_status, soil_ph, raw_
     base_mix = solve_npk(t_base_n, t_base_p, t_base_k, inventory, rules, raw_area, unit_label)
 
     return {
-        "inventory": inventory,
-        "rules": rules,
-        "crop_rules": crop_rules,
-        "ph_rules": ph_rules,
         "selected_crop_label": crop_label,
         "selected_crop": selected_crop,
         "area_ha": area_ha,
