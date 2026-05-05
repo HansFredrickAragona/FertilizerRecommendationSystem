@@ -114,12 +114,16 @@ def run_ui():
                     f"✅ **Status: Sufficient.** Your inventory can fulfill the "
                     f"**{raw_area} {unit}** requirements."
                 )
+                unused = inv_check.get("unused", [])
+                if unused:
+                    st.warning(f"⚠️ Unused fertilizers: {', '.join(unused)}")
                 details = inv_check.get("details", {})
                 if details:
-                    with st.expander(f"Using {details['Source']}", expanded=True):
-                        for line in details["Prescription"]:
-                            st.info(line)
-                        st.metric("Total Weight", f"{details['Total Weight']:.2f} kg")
+                    for res in details if isinstance(details, list) else [details]:
+                        with st.expander(f"Using {res['Source']}", expanded=True):
+                            for line in res["Prescription"]:
+                                st.info(line)
+                            st.metric("Total Weight", f"{res['Total Weight']:.2f} kg")
             else:
                 # inv_check is invalid — surface the reason clearly
                 st.warning(f"⚠️ **Status: Insufficient.** {inv_check['reason']}")

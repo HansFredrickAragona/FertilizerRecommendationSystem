@@ -248,7 +248,7 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
                         unit=unit_label,
                         fertilizer_name=k_filler["name"]
                     ))
-
+                    
                 results.append({
                     "Source": " + ".join(filter(None, [
                         n_filler["name"] if qty_n > 0 else None,
@@ -334,6 +334,16 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
             ),
             "details": None,
         }
+    
+    used_fertilizers = set()
+
+    for mix in candidate_mix:
+        source_str = mix.get("Source", "")
+        parts = [p.strip() for p in source_str.split("+")]
+        used_fertilizers.update(parts)
+
+    selected_set = set(selected_inventory_names)
+    unused_fertilizers = selected_set - used_fertilizers
 
     return {
        "valid": True,
@@ -342,6 +352,7 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
             f"{area} {unit_label}. Review the generated prescription details."
         ),
         "details": candidate_mix,
+        "unused": list(unused_fertilizers),  
     }
 
 
