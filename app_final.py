@@ -237,7 +237,7 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
         dict: A result object with a boolean 'valid', a text 'reason', and
               optional 'details' when the selection can satisfy requirements.
     """
-    inventory, rules, _, _, _ = load_assets()
+    inventory, rules, _, _ = load_assets()
     selected_inventory_names = selected_inventory_names or []
 
     if not selected_inventory_names:
@@ -390,7 +390,7 @@ def build_recommendation(crop_label, n_status, p_status, k_status, soil_ph, raw_
     Returns:
         dict: Recommendation results including targets, mixes, pH output, and sufficiency state.
     """
-    inventory, rules, crop_rules, _, ph_rules = load_assets()
+    inventory, rules, crop_rules, ph_rules = load_assets()
     selected_crop = THESIS_CROP_MAP.get(crop_label, crop_label)
 
     if selected_crop not in crop_rules:
