@@ -335,10 +335,10 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
             "details": None,
         }
 
-    best = candidate_mix[0]
+    best = candidate_mix
     return {
        "valid": True,
-        "reason": (
+        "reason": ( 
             f"The selected fertilizers can solve the required NPK targets using "
             f"'{best['Source']}'."
         ),
