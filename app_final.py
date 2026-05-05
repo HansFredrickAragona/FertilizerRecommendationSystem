@@ -193,8 +193,8 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     allow_over = rules["constraints"]["allow_over_fertilization"] # Extracts allow_over_fertilization - False,over fert is not allowed
 
     # exrtacting fertilizer with Pure N, K and P Compound & Complete
-    n_filler = next(f for f in inventory if f["n"] > 0 and f["p"] == 0 and f["k"] == 0)
-    k_filler = next(f for f in inventory if f["k"] > 0 and f["n"] == 0 and f["p"] == 0)
+    n_filler = next((f for f in inventory if f["n"] > 0 and f["p"] == 0 and f["k"] == 0), None)
+    k_filler = next((f for f in inventory if f["k"] > 0 and f["n"] == 0 and f["p"] == 0), None)
     p_sources = [f for f in inventory if f["p"] > 0] # Compund & Complete
 
     #Solving Part (Core)
@@ -213,12 +213,20 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
         if not allow_over and (rem_n < -0.01 or rem_k < -0.01):
             continue
 
-        #if no over fertilizer solve the remaining N &K
-        qty_n = (max(0, rem_n) / n_filler["n"]) * 100
-        qty_k = (max(0, rem_k) / k_filler["k"]) * 100
+         # N filler is needed only when there is remaining N to supply
+        if rem_n > 0.01 and n_filler is None:
+            continue  # can't satisfy N requirement without a pure-N source — skip this combo
+ 
+        # K filler is needed only when there is remaining K to supply
+        if rem_k > 0.01 and k_filler is None:
+            continue  # can't satisfy K requirement without a pure-K source — skip this combo
 
-        total_n = n_provided + ((qty_n * n_filler["n"]) / 100)
-        total_k = k_provided + ((qty_k * k_filler["k"]) / 100)
+        #if no over fertilizer solve the remaining N &K
+        qty_n = (max(0, rem_n) / n_filler["n"]) * 100 if rem_n > 0.01 and n_filler else 0
+        qty_k = (max(0, rem_k) / k_filler["k"]) * 100 if rem_k > 0.01 and k_filler else 0
+
+        total_n = n_provided + ((qty_n * n_filler["n"]) / 100 if n_filler else 0)
+        total_k = k_provided + ((qty_k * k_filler["k"]) / 100 if k_filler else 0)
 
         fmt = rules["output_format"]
         prescription = []
@@ -255,18 +263,20 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     return sorted(results, key=lambda x: x["Total Weight"])[:rules["constraints"]["max_combinations"]]
 
 
-def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names):
-    """Validate selected fertilizer inventory against required NPK totals.
+def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names, area, unit_label):
+    """Validate selected fertilizer inventory by attempting to solve the required
+    NPK mix using only the selected fertilizers.
 
     Args:
         t_base_n: Total nitrogen requirement for the target area.
         t_base_p: Total phosphorus requirement for the target area.
         t_base_k: Total potassium requirement for the target area.
         selected_inventory_names: List of fertilizer names selected by the user.
+        area: The area for which to calculate the prescription.
+        unit_label: The unit label for the area.
 
     Returns:
-        dict: A result object with a boolean 'valid', a text 'reason', and
-              optional 'details' when the selection can satisfy requirements.
+        dict: {'valid': bool, 'reason': str, 'details': dict | None}
     """
     inventory, rules, _, _ = load_assets()
     selected_inventory_names = selected_inventory_names or []
@@ -274,7 +284,7 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
     if not selected_inventory_names:
         return {
             "valid": False,
-            "reason": "No fertilizers selected.",
+            "reason": "No fertilizers selected. Please choose at least one fertilizer to evaluate.",
             "details": None,
         }
 
@@ -283,96 +293,56 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
     if invalid_names:
         return {
             "valid": False,
-            "reason": f"Unknown fertilizer name(s): {', '.join(invalid_names)}.",
+            "reason": f"The following fertilizer(s) were not recognized: {', '.join(invalid_names)}.",
             "details": None,
         }
 
     selected_inventory = [f for f in inventory if f["name"] in selected_inventory_names]
-    if not selected_inventory:
-        return {
-            "valid": False,
-            "reason": "Selected fertilizer names did not match any available inventory items.",
-            "details": None,
-        }
 
-    has_n = any(f["n"] > 0 for f in selected_inventory)
-    has_p = any(f["p"] > 0 for f in selected_inventory)
-    has_k = any(f["k"] > 0 for f in selected_inventory)
-    missing = []
-    if t_base_n > 0 and not has_n:
-        missing.append("Nitrogen (N)")
-    if t_base_p > 0 and not has_p:
-        missing.append("Phosphorus (P)")
-    if t_base_k > 0 and not has_k:
-        missing.append("Potassium (K)")
-    if missing:
-        return {
-            "valid": False,
-            "reason": f"Selected inventory cannot supply: {', '.join(missing)}.",
-            "details": None,
-        }
-
+    # Core check: attempt to solve NPK using only the selected fertilizers
     try:
-        candidate_mix = solve_npk(t_base_n, t_base_p, t_base_k, selected_inventory, rules, area=1.0, unit_label="ha")
+        candidate_mix = solve_npk(
+            t_base_n, t_base_p, t_base_k,
+            selected_inventory, rules,
+            area=area, unit_label=unit_label
+        )
     except StopIteration:
         return {
             "valid": False,
-            "reason": "Selected inventory lacks required pure N/K fillers or valid P-source fertilizers.",
+            "reason": (
+                "The selected fertilizers cannot form a valid combination. "
+                "The solver requires at least one pure N-source, one pure K-source, "
+                "and a compatible P-source among the selected items."
+            ),
             "details": None,
         }
     except Exception as exc:
         return {
             "valid": False,
-            "reason": f"Unable to evaluate selected fertilizers: {exc}",
+            "reason": f"The solver encountered an error with the selected fertilizers: {exc}",
             "details": None,
         }
 
     if not candidate_mix:
         return {
             "valid": False,
-            "reason": "No valid fertilizer mix could be created from the selected inventory.",
+            "reason": (
+                "The selected fertilizers could not produce a valid mix for the "
+                "required NPK targets. Try adding fertilizers that cover the missing nutrients."
+            ),
             "details": None,
         }
 
     best = candidate_mix[0]
-    enough_n = best["Applied N"] >= t_base_n - 0.01
-    enough_p = best["Applied P"] >= t_base_p - 0.01
-    enough_k = best["Applied K"] >= t_base_k - 0.01
-    if not (enough_n and enough_p and enough_k):
-        missing = []
-        if not enough_n:
-            missing.append("Nitrogen")
-        if not enough_p:
-            missing.append("Phosphorus")
-        if not enough_k:
-            missing.append("Potassium")
-        return {
-            "valid": False,
-            "reason": f"Selected inventory cannot fully satisfy: {', '.join(missing)}.",
-            "details": {
-                "candidate_prescription": best["Prescription"],
-                "applied": {
-                    "N": round(best["Applied N"], 2),
-                    "P": round(best["Applied P"], 2),
-                    "K": round(best["Applied K"], 2),
-                },
-            },
-        }
-
     return {
-        "valid": True,
-        "reason": "Selected inventory can satisfy the required NPK values.",
-        "details": {
-            "needed_kg": round(best["Total Weight"], 2),
-            "source": best["Source"],
-            "applied": {
-                "N": round(best["Applied N"], 2),
-                "P": round(best["Applied P"], 2),
-                "K": round(best["Applied K"], 2),
-            },
-            "prescription": best["Prescription"],
-        },
+       "valid": True,
+        "reason": (
+            f"The selected fertilizers can solve the required NPK targets using "
+            f"'{best['Source']}'."
+        ),
+        "details": best,
     }
+
 
 
 def normalize_area(raw_area, area_unit):
@@ -439,7 +409,7 @@ def build_recommendation(crop_label, n_status, p_status, k_status, soil_ph, raw_
     t_base_n, t_base_p, t_base_k = base_n * area_ha, base_p * area_ha, base_k * area_ha
 
     selected_inventory_names = selected_inventory_names or []
-    inventory_check = check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names)
+    inventory_check = check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names,raw_area, unit_label)
     user_inventory = [f for f in inventory if f["name"] in selected_inventory_names]
 
     has_n = any(f["n"] > 0 for f in user_inventory)

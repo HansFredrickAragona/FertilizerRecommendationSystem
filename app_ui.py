@@ -116,14 +116,10 @@ def run_ui():
                 )
                 details = inv_check.get("details", {})
                 if details:
-                    d_col1, d_col2, d_col3 = st.columns(3)
-                    d_col1.metric("Applied N",  f"{details['applied']['N']:.2f} kg")
-                    d_col2.metric("Applied P",  f"{details['applied']['P']:.2f} kg")
-                    d_col3.metric("Applied K",  f"{details['applied']['K']:.2f} kg")
-                    st.caption(
-                        f"Source: **{details.get('source', '—')}** | "
-                        f"Total fertilizer needed: **{details.get('needed_kg', '—')} kg**"
-                    )
+                    with st.expander(f"Using {details['Source']}", expanded=True):
+                        for line in details["Prescription"]:
+                            st.info(line)
+                        st.metric("Total Weight", f"{details['Total Weight']:.2f} kg")
             else:
                 # inv_check is invalid — surface the reason clearly
                 st.warning(f"⚠️ **Status: Insufficient.** {inv_check['reason']}")
