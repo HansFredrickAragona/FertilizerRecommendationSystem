@@ -10,9 +10,9 @@ app = FastAPI(title="Rule-Based Fertilizer Recommendation API")
 # Example request body:
 # {
 #   "crop_label": "Cabbage",
-#   "n_status": "L",
-#   "p_status": "ML",
-#   "k_status": "S",
+#   "n_status": "Low",
+#   "p_status": "Medium",
+#   "k_status": "High",
 #   "soil_ph": 5.5,
 #   "raw_area": 500.0,
 #   "area_unit": "Square Meters (sqm)",

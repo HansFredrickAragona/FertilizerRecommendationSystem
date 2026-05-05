@@ -79,9 +79,9 @@ def get_fertilizer_recommendation(crop_name, n_status, p_status, k_status, crop_
 
     Args:
         crop_name: The normalized crop key used by crop rules.
-        n_status: Nitrogen soil status code (e.g. "L", "M", "H", "VH").
-        p_status: Phosphorus soil status code (e.g. "L", "ML", "MH", "H", "VH").
-        k_status: Potassium soil status code (e.g. "L", "S", "S+", "S++/+++").
+        n_status: Nitrogen soil status code (e.g. "Low", "Medium", "High").
+        p_status: Phosphorus soil status code (e.g. "Low", "Medium", "High").
+        k_status: Potassium soil status code (e.g. "Low", "Medium", "High").
         crop_rules: Mapping of crop names to NPK target rule definitions.
 
     Returns:
