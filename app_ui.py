@@ -129,7 +129,7 @@ def run_ui():
                 if "Nitrogen (N)" in missing:
                     st.caption("💡 *Tip: Consider adding Urea (46-0-0) or Ammonium Sulfate.*")
                 if "Phosphorus (P)" in missing:
-                    st.caption("💡 *Tip: Consider adding Solophos (0-20-0) or 16-20-0.*")
+                    st.caption("💡 *Tip: Consider adding Single Superphosphate 16-20-0.*")
                 if "Potassium (K)" in missing:
                     st.caption("💡 *Tip: Consider adding Muriate of Potash (0-0-60).*")
 
