@@ -278,7 +278,7 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
         unit_label: The unit label for the area.
 
     Returns:
-        dict: {'valid': bool, 'reason': str, 'details': dict | None}
+        dict: {'valid': bool, 'reason': str, 'details': List | None}
     """
     inventory, rules, _, _ = load_assets()
     selected_inventory_names = selected_inventory_names or []
@@ -335,14 +335,13 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
             "details": None,
         }
 
-    best = candidate_mix[0]
     return {
        "valid": True,
         "reason": (
             f"The selected fertilizers can solve the required NPK targets using "
-            f"'{best['Source']}'."
+            f"{area} {unit_label}. Review the generated prescription details."
         ),
-        "details": best,
+        "details": candidate_mix,
     }
 
 
