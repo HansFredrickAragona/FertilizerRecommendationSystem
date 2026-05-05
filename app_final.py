@@ -2,13 +2,49 @@ import json
 from pathlib import Path
 
 THESIS_CROP_MAP = {
-    "Cabbage": "Cabbage",
-    "Potato": "Potato",
-    "Carrot": "Carrot",
-    "Lettuce": "Lettuce",
-    "Broccoli": "Broccoli",
+    "Ampalaya": "Ampalaya",
+    "Batao": "Batao",
+    "String Beans": "String Beans",
     "Snap Bean": "String Beans",
-    "Tomato": "tomatoes"
+    "Baguio Beans": "Baguio Beans",
+    "Lima (Patani)": "Lima (Patani)",
+    "Winged Beans": "Winged Beans",
+    "Seguidillas": "Seguidillas",
+    "Dwarf Beans": "Dwarf Beans",
+    "Chayote": "Chayote",
+    "Cucumber": "Cucumber",
+    "Parsnip": "Parsnip",
+    "Patani": "Patani",
+    "Patola": "Patola",
+    "Peas": "Peas",
+    "Carrot": "Carrot",
+    "Garlic": "Garlic",
+    "Onion": "Onion",
+    "Ginger (Local)": "Ginger (Local)",
+    "Ginger (Improved)": "Ginger (Improved)",
+    "Potato": "Potato",
+    "Radish/Turnips": "Radish/Turnips",
+    "Asparagus": "Asparagus",
+    "Broccoli": "Broccoli",
+    "Cabbage": "Cabbage",
+    "Cauliflower": "Cauliflower",
+    "Cabbage (Head)": "Cabbage (Head)",
+    "Lettuce": "Lettuce",
+    "Mustard": "Mustard",
+    "Pechay": "Pechay",
+    "Celery": "Celery",
+    "Bell Pepper": "Bell Pepper",
+    "Green (siling-haba) Pepper": "Green (siling-haba) Pepper",
+    "Pepper": "Pepper",
+    "Black Pepper": "Black Pepper",
+    "Eggplant": "Eggplant",
+    "Okra (Local)": "Okra (Local)",
+    "Oka (Hybrid)": "Oka (Hybrid)",
+    "Tomato": "tomatoes",
+    "tomatoes": "tomatoes",
+    "SQUASH": "SQUASH",
+    "Basil": "Basil",
+    "Mint herb": "Mint herb"
 }
 
 def get_project_root() -> Path:
@@ -22,10 +58,6 @@ def get_project_root() -> Path:
         Path: The project root directory containing the "data" folder.
     """
     current = Path(__file__).resolve()
-    if (current.parent / "data").exists():
-        return current.parent
-    if (current.parent.parent / "data").exists():
-        return current.parent.parent
     return current.parent
 
 def load_assets():
@@ -38,15 +70,14 @@ def load_assets():
         tuple: A tuple containing (inventory, rules, crop_rules, ph_rules).
     """
     base_dir = get_project_root()
-    data_dir = base_dir / "data"
 
-    with open(data_dir / "fertilizers.json", "r", encoding="utf-8") as f:
+    with open(base_dir / "fertilizers.json", "r", encoding="utf-8") as f:
         inventory = json.load(f)["inventory"]
-    with open(data_dir / "engine_rules.json", "r", encoding="utf-8") as r:
+    with open(base_dir / "engine_rules.json", "r", encoding="utf-8") as r:
         rules = json.load(r)["engine_logic"]
-    with open(data_dir / "crop_npk_rules.json", "r", encoding="utf-8") as c:
+    with open(base_dir / "crop_npk_rules.json", "r", encoding="utf-8") as c:
         crop_rules = json.load(c)
-    with open(data_dir / "ph_rules.json", "r", encoding="utf-8") as p:
+    with open(base_dir / "ph_rules.json", "r", encoding="utf-8") as p:
         ph_rules = json.load(p)
 
     return inventory, rules, crop_rules, ph_rules
