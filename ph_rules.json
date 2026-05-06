@@ -41,7 +41,7 @@
         "ph_action": "liming_required",
         "borderline_warning": false,
         "borderline_message": null,
-        "recommendation_message": "Soil pH is at or below 5.0. Liming is required before planting to raise soil pH toward the ideal level of 6.5."
+        "recommendation_message": "Soil pH is at or below 5.0. Lime is required before planting to raise soil pH toward the ideal level of 6.5."
       }
     },
     {
@@ -63,7 +63,7 @@
         "ph_action": "none",
         "borderline_warning": false,
         "borderline_message": null,
-        "recommendation_message": "Soil pH is within the acceptable range of 5.1 to 7.4. No soil amendment is required. The ideal pH is 6.5."
+        "recommendation_message": "Soil pH is within the acceptable range. No soil amendment is required. The ideal pH is 6.5."
       }
     },
     {

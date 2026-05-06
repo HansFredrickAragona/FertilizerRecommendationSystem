@@ -193,6 +193,7 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     precision = 3 if max_target < 1.0 else rules["constraints"]["precision_decimals"]
     
     allow_over = rules["constraints"]["allow_over_fertilization"]
+    sack_size = rules["constraints"].get("sack_size_kg", 50)
 
     n_fillers = [f for f in inventory if f["n"] > 0 and f["p"] == 0 and f["k"] == 0]
     k_fillers = [f for f in inventory if f["k"] > 0 and f["n"] == 0 and f["p"] == 0]
@@ -231,12 +232,15 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
                 if qty_n > 0:
                     prescription.append(fmt.format(
                         qty=round(qty_n, precision),
+                        sacks= round(qty_n / sack_size, precision),
                         area=area,
                         unit=unit_label,
                         fertilizer_name=n_filler["name"]
                     ))
+
                 prescription.append(fmt.format(
                     qty=round(qty_p, precision),
+                    sacks=round(qty_p / sack_size, precision),
                     area=area,
                     unit=unit_label,
                     fertilizer_name=p_fert["name"]
@@ -244,6 +248,7 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
                 if qty_k > 0:
                     prescription.append(fmt.format(
                         qty=round(qty_k, precision),
+                        sacks= round(qty_k / sack_size, precision),
                         area=area,
                         unit=unit_label,
                         fertilizer_name=k_filler["name"]
@@ -257,6 +262,7 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
                     ])),
                     "Prescription": prescription,
                     "Total Weight": qty_n + qty_p + qty_k,
+                    "Total Sacks": sum(round(qty / sack_size, precision) for qty in [qty_n, qty_p, qty_k]),
                     "Applied N": total_n,
                     "Applied P": p_provided,
                     "Applied K": total_k,

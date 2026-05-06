@@ -88,7 +88,7 @@ def run_ui():
             perfect_ph          = ph_res.get("perfect_ph", 6.5)
 
             if ph_action == "liming_required":
-                st.error(f"⚠️ **Soil pH: {soil_ph} — Liming Required**")
+                st.error(f"⚠️ **Soil pH: {soil_ph} — Lime Required**")
                 st.write(recommendation_msg)
             elif ph_action == "gypsum_recommended":
                 st.warning(f"⚠️ **Soil pH: {soil_ph} — Gypsum Recommended**")
@@ -100,7 +100,7 @@ def run_ui():
                 st.success(f"✅ **Soil pH: {soil_ph} — Within Acceptable Range**")
                 st.write(recommendation_msg)
 
-            st.write(f"**Ideal pH:** {perfect_ph} &nbsp;|&nbsp; **Acceptable Range:** 5.1 – 7.4")
+            st.write(f"**Ideal pH:** {perfect_ph} for most plants &nbsp;|&nbsp; **Your pH:** {soil_ph}")
             st.divider()
 
             # ── INVENTORY SUITABILITY REPORT ──────────────────────────────────
@@ -176,6 +176,7 @@ def run_ui():
                         for line in res["Prescription"]:
                             st.info(line)
                         st.metric("Total Weight", f"{res['Total Weight']:.2f} kg")
+                        st.metric("Total Sack/s", f"{res['Total Sacks']:.2f}")
             else:
                 st.warning("No standard fertilizer mixes could be generated for the current inputs.")
 

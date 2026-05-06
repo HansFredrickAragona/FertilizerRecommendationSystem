@@ -21,8 +21,9 @@
     "constraints": {
       "allow_over_fertilization": false,
       "max_combinations": 10,
-      "precision_decimals": 2
+      "precision_decimals": 4 ,
+      "sack_size_kg": 50
     },
-    "output_format": "{qty} kg/{area} {unit} of {fertilizer_name}"
+    "output_format": " {sacks} sack/s per {area} {unit}  or {qty} kg/{area} {unit}of {fertilizer_name}"
   }
 }
