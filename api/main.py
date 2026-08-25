@@ -1,10 +1,8 @@
-from typing import List, Optional
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app_final import build_recommendation
+from engine.core import build_recommendation
 
 app = FastAPI(title="Rule-Based Fertilizer Recommendation API")
 
@@ -14,6 +12,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Example request body:
 # {
@@ -39,8 +38,7 @@ class RecommendationRequest(BaseModel):
     soil_ph: float
     raw_area: float
     area_unit: str = "Square Meters (sqm)"
-    selected_inventory_names: Optional[List[str]] = None
-
+    selected_inventory_names: list[str] | None = None
 
 
 @app.post("/recommendation")

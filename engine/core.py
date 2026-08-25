@@ -44,8 +44,9 @@ THESIS_CROP_MAP = {
     "tomatoes": "tomatoes",
     "Squash": "Squash",
     "Basil": "Basil",
-    "Mint herb": "Mint herb"
+    "Mint herb": "Mint herb",
 }
+
 
 def get_project_root() -> Path:
     """Resolve the project root directory for the rule-based engine.
@@ -55,32 +56,34 @@ def get_project_root() -> Path:
     the app can reliably load JSON assets from the rule-based data directory.
 
     Returns:
-        Path: The project root directory containing the "data" folder.
+        Path: The rules directory containing the JSON rule files.
     """
     current = Path(__file__).resolve()
-    return current.parent
+    return current.parent.parent / "rules"
+
 
 def load_assets():
-    """Load rule engine JSON assets from the project data folder.
+    """Load rule engine JSON assets from the rules directory.
 
     Reads the fertilizer inventory, engine rules, crop NPK target rules, and
-    pH adjustment rules from JSON files under the configured data directory.
+    pH adjustment rules from JSON files under the configured rules directory.
 
     Returns:
         tuple: A tuple containing (inventory, rules, crop_rules, ph_rules).
     """
     base_dir = get_project_root()
 
-    with open(base_dir / "fertilizers.json", "r", encoding="utf-8") as f:
+    with open(base_dir / "fertilizers.json", encoding="utf-8") as f:
         inventory = json.load(f)["inventory"]
-    with open(base_dir / "engine_rules.json", "r", encoding="utf-8") as r:
+    with open(base_dir / "engine_rules.json", encoding="utf-8") as r:
         rules = json.load(r)["engine_logic"]
-    with open(base_dir / "crop_npk_rules.json", "r", encoding="utf-8") as c:
+    with open(base_dir / "crop_npk_rules.json", encoding="utf-8") as c:
         crop_rules = json.load(c)
-    with open(base_dir / "ph_rules.json", "r", encoding="utf-8") as p:
+    with open(base_dir / "ph_rules.json", encoding="utf-8") as p:
         ph_rules = json.load(p)
 
     return inventory, rules, crop_rules, ph_rules
+
 
 def parse_target_value(val):
     """Normalize a crop nutrient target value into a float.
@@ -94,16 +97,19 @@ def parse_target_value(val):
     Returns:
         float: The parsed numeric target, or 0.0 on failure.
     """
-    if val is None: return 0.0
-    if isinstance(val, (int, float)): return float(val)
+    if val is None:
+        return 0.0
+    if isinstance(val, (int, float)):
+        return float(val)
     if isinstance(val, str) and ("–" in val or "-" in val):
         val = val.replace("–", "-")
         parts = [float(p.strip()) for p in val.split("-")]
         return sum(parts) / len(parts)
     try:
         return float(val)
-    except:
+    except (TypeError, ValueError):
         return 0.0
+
 
 def get_fertilizer_recommendation(crop_name, n_status, p_status, k_status, crop_rules):
     """Compute the base N-P-K target rates for a specific crop and soil status.
@@ -119,11 +125,13 @@ def get_fertilizer_recommendation(crop_name, n_status, p_status, k_status, crop_
         tuple|None: Target rates (N, P, K) in kg/ha or None if crop data is missing.
     """
     crop_data = crop_rules.get(crop_name)
-    if not crop_data: return None
+    if not crop_data:
+        return None
     t_n = parse_target_value(crop_data["N"].get(n_status, 0))
     t_p = parse_target_value(crop_data["P"].get(p_status, 0))
     t_k = parse_target_value(crop_data["K"].get(k_status, 0))
     return t_n, t_p, t_k
+
 
 def run_ph_engine(data, ph_rules):
     """Evaluate the universal soil pH rule engine.
@@ -168,6 +176,7 @@ def run_ph_engine(data, ph_rules):
     result["perfect_ph"] = perfect_ph
     return result
 
+
 def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     """Generate fertilizer mix options based on target nutrient requirements.
 
@@ -191,7 +200,7 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     if max_target <= 0:
         return []
     precision = 3 if max_target < 1.0 else rules["constraints"]["precision_decimals"]
-    
+
     allow_over = rules["constraints"]["allow_over_fertilization"]
     sack_size = rules["constraints"].get("sack_size_kg", 50)
 
@@ -200,9 +209,8 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
     p_sources = [f for f in inventory if f["p"] > 0]
 
     for p_fert in p_sources:
-        for n_filler in (n_fillers if n_fillers else [None]):
-            for k_filler in (k_fillers if k_fillers else [None]):
-
+        for n_filler in n_fillers if n_fillers else [None]:
+            for k_filler in k_fillers if k_fillers else [None]:
                 qty_p = (t_p / p_fert["p"]) * 100 if p_fert["p"] > 0 else 0
 
                 n_provided = (qty_p * p_fert["n"]) / 100
@@ -230,45 +238,61 @@ def solve_npk(t_n, t_p, t_k, inventory, rules, area, unit_label):
                 fmt = rules["output_format"]
                 prescription = []
                 if qty_n > 0:
-                    prescription.append(fmt.format(
-                        qty=round(qty_n, precision),
-                        sacks= round(qty_n / sack_size, precision),
+                    prescription.append(
+                        fmt.format(
+                            qty=round(qty_n, precision),
+                            sacks=round(qty_n / sack_size, precision),
+                            area=area,
+                            unit=unit_label,
+                            fertilizer_name=n_filler["name"],
+                        )
+                    )
+
+                prescription.append(
+                    fmt.format(
+                        qty=round(qty_p, precision),
+                        sacks=round(qty_p / sack_size, precision),
                         area=area,
                         unit=unit_label,
-                        fertilizer_name=n_filler["name"]
-                    ))
-
-                prescription.append(fmt.format(
-                    qty=round(qty_p, precision),
-                    sacks=round(qty_p / sack_size, precision),
-                    area=area,
-                    unit=unit_label,
-                    fertilizer_name=p_fert["name"]
-                ))
+                        fertilizer_name=p_fert["name"],
+                    )
+                )
                 if qty_k > 0:
-                    prescription.append(fmt.format(
-                        qty=round(qty_k, precision),
-                        sacks= round(qty_k / sack_size, precision),
-                        area=area,
-                        unit=unit_label,
-                        fertilizer_name=k_filler["name"]
-                    ))
-                    
-                results.append({
-                    "Source": " + ".join(filter(None, [
-                        n_filler["name"] if qty_n > 0 else None,
-                        p_fert["name"],
-                        k_filler["name"] if qty_k > 0 else None,
-                    ])),
-                    "Prescription": prescription,
-                    "Total Weight": qty_n + qty_p + qty_k,
-                    "Total Sacks": sum(round(qty / sack_size, precision) for qty in [qty_n, qty_p, qty_k]),
-                    "Applied N": total_n,
-                    "Applied P": p_provided,
-                    "Applied K": total_k,
-                })
+                    prescription.append(
+                        fmt.format(
+                            qty=round(qty_k, precision),
+                            sacks=round(qty_k / sack_size, precision),
+                            area=area,
+                            unit=unit_label,
+                            fertilizer_name=k_filler["name"],
+                        )
+                    )
 
-    return sorted(results, key=lambda x: x["Total Weight"])[:rules["constraints"]["max_combinations"]]
+                results.append(
+                    {
+                        "Source": " + ".join(
+                            filter(
+                                None,
+                                [
+                                    n_filler["name"] if qty_n > 0 else None,
+                                    p_fert["name"],
+                                    k_filler["name"] if qty_k > 0 else None,
+                                ],
+                            )
+                        ),
+                        "Prescription": prescription,
+                        "Total Weight": qty_n + qty_p + qty_k,
+                        "Total Sacks": sum(
+                            round(qty / sack_size, precision) for qty in [qty_n, qty_p, qty_k]
+                        ),
+                        "Applied N": total_n,
+                        "Applied P": p_provided,
+                        "Applied K": total_k,
+                    }
+                )
+
+    max_combos = rules["constraints"]["max_combinations"]
+    return sorted(results, key=lambda x: x["Total Weight"])[:max_combos]
 
 
 def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names, area, unit_label):
@@ -301,7 +325,9 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
     if invalid_names:
         return {
             "valid": False,
-            "reason": f"The following fertilizer(s) were not recognized: {', '.join(invalid_names)}.",
+            "reason": (
+                f"The following fertilizer(s) were not recognized: {', '.join(invalid_names)}."
+            ),
             "details": None,
         }
 
@@ -310,9 +336,13 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
     # Core check: attempt to solve NPK using only the selected fertilizers
     try:
         candidate_mix = solve_npk(
-            t_base_n, t_base_p, t_base_k,
-            selected_inventory, rules,
-            area=area, unit_label=unit_label
+            t_base_n,
+            t_base_p,
+            t_base_k,
+            selected_inventory,
+            rules,
+            area=area,
+            unit_label=unit_label,
         )
     except StopIteration:
         return {
@@ -340,7 +370,7 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
             ),
             "details": None,
         }
-    
+
     used_fertilizers = set()
 
     for mix in candidate_mix:
@@ -352,13 +382,13 @@ def check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names
     unused_fertilizers = selected_set - used_fertilizers
 
     return {
-       "valid": True,
+        "valid": True,
         "reason": (
             f"The selected fertilizers can solve the required NPK targets using "
             f"{area} {unit_label}. Review the generated prescription details."
         ),
         "details": candidate_mix,
-        "unused": list(unused_fertilizers),  
+        "unused": list(unused_fertilizers),
     }
 
 
@@ -382,12 +412,21 @@ def normalize_area(raw_area, area_unit):
     if "ha" in normalized or "hectare" in normalized:
         return raw_area, "ha"
     raise ValueError(
-        f"Unsupported area_unit '{area_unit}'. Use 'sqm' or 'ha', or values like 'Square Meters (sqm)' or 'Hectares (ha)'."
+        f"Unsupported area_unit '{area_unit}'. Use 'sqm' or 'ha', or values like "
+        f"'Square Meters (sqm)' or 'Hectares (ha)'."
     )
 
 
-def build_recommendation(crop_label, n_status, p_status, k_status, soil_ph, raw_area,
-                         area_unit="Square Meters (sqm)", selected_inventory_names=None):
+def build_recommendation(
+    crop_label,
+    n_status,
+    p_status,
+    k_status,
+    soil_ph,
+    raw_area,
+    area_unit="Square Meters (sqm)",
+    selected_inventory_names=None,
+):
     """Build a full fertilizer recommendation payload for external use.
 
     This method loads the engine assets, resolves crop targets, applies pH
@@ -414,10 +453,12 @@ def build_recommendation(crop_label, n_status, p_status, k_status, soil_ph, raw_
         raise ValueError(f"Crop '{selected_crop}' is not configured in crop_npk_rules.json")
 
     area_ha, unit_label = normalize_area(raw_area, area_unit)
-    
+
     rec = get_fertilizer_recommendation(selected_crop, n_status, p_status, k_status, crop_rules)
     if rec is None:
-        raise ValueError("Unable to compute fertilizer recommendation for the selected crop and soil status.")
+        raise ValueError(
+            "Unable to compute fertilizer recommendation for the selected crop and soil status."
+        )
 
     base_n, base_p, base_k = rec
     ph_res = run_ph_engine({"soil_ph": soil_ph}, ph_rules)
@@ -425,16 +466,21 @@ def build_recommendation(crop_label, n_status, p_status, k_status, soil_ph, raw_
     t_base_n, t_base_p, t_base_k = base_n * area_ha, base_p * area_ha, base_k * area_ha
 
     selected_inventory_names = selected_inventory_names or []
-    inventory_check = check_fertilzer_input(t_base_n, t_base_p, t_base_k, selected_inventory_names,raw_area, unit_label)
+    inventory_check = check_fertilzer_input(
+        t_base_n, t_base_p, t_base_k, selected_inventory_names, raw_area, unit_label
+    )
     user_inventory = [f for f in inventory if f["name"] in selected_inventory_names]
 
     has_n = any(f["n"] > 0 for f in user_inventory)
     has_p = any(f["p"] > 0 for f in user_inventory)
     has_k = any(f["k"] > 0 for f in user_inventory)
     missing_nutrients = []
-    if t_base_n > 0 and not has_n: missing_nutrients.append("Nitrogen (N)")
-    if t_base_p > 0 and not has_p: missing_nutrients.append("Phosphorus (P)")
-    if t_base_k > 0 and not has_k: missing_nutrients.append("Potassium (K)")
+    if t_base_n > 0 and not has_n:
+        missing_nutrients.append("Nitrogen (N)")
+    if t_base_p > 0 and not has_p:
+        missing_nutrients.append("Phosphorus (P)")
+    if t_base_k > 0 and not has_k:
+        missing_nutrients.append("Potassium (K)")
 
     base_mix = solve_npk(t_base_n, t_base_p, t_base_k, inventory, rules, raw_area, unit_label)
 

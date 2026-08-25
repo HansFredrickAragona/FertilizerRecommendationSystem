@@ -1,3 +1,21 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+.ruff_cache/
+.pytest_cache/
+.coverage
+
+# Local-only agent state
+agent-memory/
+opencode-memory/
+
+# Environment / secrets
+.env
+.env.*
+
+# Node / Next.js frontend
+node_modules/
+.next/
+out/
+npm-debug.log*

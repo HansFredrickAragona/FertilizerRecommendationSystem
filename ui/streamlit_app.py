@@ -1,6 +1,7 @@
-from app_final import build_recommendation, load_assets, THESIS_CROP_MAP
-import streamlit as st
 import pandas as pd
+import streamlit as st
+
+from engine.core import THESIS_CROP_MAP, build_recommendation, load_assets
 
 
 def run_ui():
@@ -8,7 +9,7 @@ def run_ui():
     st.title("🌱 Fertilizer Recommendation Engine")
 
     try:
-        inventory, _, _, _= load_assets()
+        inventory, _, _, _ = load_assets()
 
         with st.sidebar:
             st.header("1. Land Information")
@@ -25,9 +26,7 @@ def run_ui():
             n_lvl = st.selectbox("Nitrogen (N) Status", options=["Low", "Medium", "High"])
             p_lvl = st.selectbox("Phosphorus (P) Status", options=["Low", "Medium", "High"])
             k_lvl = st.selectbox("Potassium (K) Status", options=["Low", "Medium", "High"])
-            soil_ph = st.number_input(
-                "Soil pH", min_value=0.0, max_value=14.0, value=5.5, step=0.1
-            )
+            soil_ph = st.number_input("Soil pH", min_value=0.0, max_value=14.0, value=5.5, step=0.1)
 
             st.write("---")
             st.header("3. Inventory Management")
@@ -56,12 +55,11 @@ def run_ui():
                 st.error(f"❌ Configuration Error: {ve}")
                 return
 
-            unit_label   = result["unit_label"]
             base_targets = result["base_targets_per_ha"]
-            total_base   = result["total_base"]
-            ph_res       = result["ph_result"]
-            inv_check    = result["inventory_check"]
-            inv_suff     = result["inventory_sufficiency"]
+            total_base = result["total_base"]
+            ph_res = result["ph_result"]
+            inv_check = result["inventory_check"]
+            inv_suff = result["inventory_sufficiency"]
             standard_mix = result["standard_mix"]
 
             st.success(f"✅ Results for {raw_area} {unit}")
@@ -74,18 +72,18 @@ def run_ui():
                 )
                 st.write("Standard recommendation per hectare (Source: crop_npk_rules.json):")
                 ref_col1, ref_col2, ref_col3 = st.columns(3)
-                ref_col1.metric("Target N",    f"{base_targets['N']} kg/ha")
+                ref_col1.metric("Target N", f"{base_targets['N']} kg/ha")
                 ref_col2.metric("Target P₂O₅", f"{base_targets['P']} kg/ha")
-                ref_col3.metric("Target K₂O",  f"{base_targets['K']} kg/ha")
+                ref_col3.metric("Target K₂O", f"{base_targets['K']} kg/ha")
 
             # ── 1. SOIL pH ASSESSMENT ─────────────────────────────────────────
             st.subheader("1. Soil Condition Assessment")
 
-            ph_action           = ph_res.get("ph_action", "none")
-            borderline_warning  = ph_res.get("borderline_warning", False)
-            recommendation_msg  = ph_res.get("recommendation_message", "")
-            borderline_msg      = ph_res.get("borderline_message", None)
-            perfect_ph          = ph_res.get("perfect_ph", 6.5)
+            ph_action = ph_res.get("ph_action", "none")
+            borderline_warning = ph_res.get("borderline_warning", False)
+            recommendation_msg = ph_res.get("recommendation_message", "")
+            borderline_msg = ph_res.get("borderline_message", None)
+            perfect_ph = ph_res.get("perfect_ph", 6.5)
 
             if ph_action == "liming_required":
                 st.error(f"⚠️ **Soil pH: {soil_ph} — Lime Required**")
@@ -100,7 +98,9 @@ def run_ui():
                 st.success(f"✅ **Soil pH: {soil_ph} — Within Acceptable Range**")
                 st.write(recommendation_msg)
 
-            st.write(f"**Ideal pH:** {perfect_ph} for most plants &nbsp;|&nbsp; **Your pH:** {soil_ph}")
+            st.write(
+                f"**Ideal pH:** {perfect_ph} for most plants &nbsp;|&nbsp; **Your pH:** {soil_ph}"
+            )
             st.divider()
 
             # ── INVENTORY SUITABILITY REPORT ──────────────────────────────────
@@ -108,7 +108,10 @@ def run_ui():
 
             if not user_selection:
                 # No fertilizers chosen at all — skip detailed check
-                st.info("ℹ️ No fertilizers selected. Add items from the sidebar to see a suitability report.")
+                st.info(
+                    "ℹ️ No fertilizers selected. Add items from the sidebar to "
+                    "see a suitability report."
+                )
             elif inv_check["valid"]:
                 st.info(
                     f"✅ **Status: Sufficient.** Your inventory can fulfill the "
@@ -178,13 +181,17 @@ def run_ui():
                         st.metric("Total Weight", f"{res['Total Weight']:.2f} kg")
                         st.metric("Total Sack/s", f"{res['Total Sacks']:.2f}")
             else:
-                st.warning("No standard fertilizer mixes could be generated for the current inputs.")
+                st.warning(
+                    "No standard fertilizer mixes could be generated for the current inputs."
+                )
 
     except Exception as e:
         st.error(f"Configuration Error: {e}")
 
+
 def main():
-    run_ui()  
+    run_ui()
+
 
 if __name__ == "__main__":
     run_ui()

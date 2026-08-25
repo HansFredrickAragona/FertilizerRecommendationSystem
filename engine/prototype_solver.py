@@ -1,4 +1,3 @@
-
 def solve_npk_with_inv(t_n, t_p, t_k, inventory, selected_inventory, rules, area, unit_label):
     """Generate fertilizer mix options based on target nutrient requirements.
 
@@ -87,39 +86,49 @@ def solve_npk_with_inv(t_n, t_p, t_k, inventory, selected_inventory, rules, area
                 fmt = rules["output_format"]
                 prescription = []
                 if qty_n > 0:
-                    prescription.append(fmt.format(
-                        qty=round(qty_n, precision),
-                        sacks=round(qty_n / sack_size, precision),
-                        area=area,
-                        unit=unit_label,
-                        fertilizer_name=n_filler["name"]
-                    ))
+                    prescription.append(
+                        fmt.format(
+                            qty=round(qty_n, precision),
+                            sacks=round(qty_n / sack_size, precision),
+                            area=area,
+                            unit=unit_label,
+                            fertilizer_name=n_filler["name"],
+                        )
+                    )
                 if qty_p > 0:
-                    prescription.append(fmt.format(
-                        qty=round(qty_p, precision),
-                        sacks=round(qty_p / sack_size, precision),
-                        area=area,
-                        unit=unit_label,
-                        fertilizer_name=p_fert["name"]
-                    ))
+                    prescription.append(
+                        fmt.format(
+                            qty=round(qty_p, precision),
+                            sacks=round(qty_p / sack_size, precision),
+                            area=area,
+                            unit=unit_label,
+                            fertilizer_name=p_fert["name"],
+                        )
+                    )
                 if qty_k > 0:
-                    prescription.append(fmt.format(
-                        qty=round(qty_k, precision),
-                        sacks=round(qty_k / sack_size, precision),
-                        area=area,
-                        unit=unit_label,
-                        fertilizer_name=k_filler["name"]
-                    ))
+                    prescription.append(
+                        fmt.format(
+                            qty=round(qty_k, precision),
+                            sacks=round(qty_k / sack_size, precision),
+                            area=area,
+                            unit=unit_label,
+                            fertilizer_name=k_filler["name"],
+                        )
+                    )
 
-                results.append({
-                    "Source": " + ".join(source_names),
-                    "Prescription": prescription,
-                    "Total Weight": qty_n + qty_p + qty_k,
-                    "Total Sacks": sum(round(qty / sack_size, precision) for qty in [qty_n, qty_p, qty_k]),
-                    "Applied N": total_n,
-                    "Applied P": p_provided,
-                    "Applied K": total_k,
-                })
+                results.append(
+                    {
+                        "Source": " + ".join(source_names),
+                        "Prescription": prescription,
+                        "Total Weight": qty_n + qty_p + qty_k,
+                        "Total Sacks": sum(
+                            round(qty / sack_size, precision) for qty in [qty_n, qty_p, qty_k]
+                        ),
+                        "Applied N": total_n,
+                        "Applied P": p_provided,
+                        "Applied K": total_k,
+                    }
+                )
 
-    return sorted(results, key=lambda x: x["Total Weight"])[:rules["constraints"]["max_combinations"]]
-  
+    max_combos = rules["constraints"]["max_combinations"]
+    return sorted(results, key=lambda x: x["Total Weight"])[:max_combos]
