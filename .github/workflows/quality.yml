@@ -17,14 +17,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Check Python syntax
-        run: python -m compileall -q .
+        run: python -m compileall -q engine api ui tests
+
+      - name: Lint and format check (Ruff)
+        run: |
+          ruff check .
+          ruff format --check .
 
       - name: Validate rule files are valid JSON
         run: |
-          for file in *.json; do
+          for file in rules/*.json; do
             python -m json.tool "$file" > /dev/null
           done
 
