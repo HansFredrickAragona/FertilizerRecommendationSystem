@@ -2,13 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from engine.core import build_recommendation
+from engine.core import build_recommendation, load_assets
 
 app = FastAPI(title="Rule-Based Fertilizer Recommendation API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -39,6 +39,18 @@ class RecommendationRequest(BaseModel):
     raw_area: float
     area_unit: str = "Square Meters (sqm)"
     selected_inventory_names: list[str] | None = None
+
+
+@app.get("/catalog")
+def catalog():
+    inventory, _rules, crop_rules, _ph_rules = load_assets()
+    return {
+        "crops": sorted(crop_rules.keys()),
+        "fertilizers": [
+            {"name": item["name"], "n": item["n"], "p": item["p"], "k": item["k"]}
+            for item in inventory
+        ],
+    }
 
 
 @app.post("/recommendation")
