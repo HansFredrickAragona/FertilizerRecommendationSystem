@@ -42,7 +42,8 @@ All validation passing. Changes not yet committed.
 
 1. Owner review of the UI; commit/push approval pending.
 2. Add Streamlit to requirements.txt (approval required).
-3. Verify P/P2O5 and K/K2O unit labeling with the owner.
+3. Unit convention confirmed: rules use elemental P/K (per Benguet State
+   University reference); fertilizer grades are %N-%P-%K.
 4. Before deployment: add production Vercel origin to CORS allowlist.
 5. Optional polish: sessionStorage-backed history, richer PDF export.
 

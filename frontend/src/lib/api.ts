@@ -59,7 +59,9 @@ export type RecommendationResponse = {
     missing_nutrients: string[];
   };
   standard_mix: MixEntry[];
-  farmer_selected_mix?: MixEntry[];
+  selection_status: "none" | "sufficient" | "supplementable" | "insufficient";
+  farmer_selected_mix: MixEntry[];
+  farmer_supplemented_mix: MixEntry[];
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";

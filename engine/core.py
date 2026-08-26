@@ -484,6 +484,31 @@ def build_recommendation(
 
     base_mix = solve_npk(t_base_n, t_base_p, t_base_k, inventory, rules, raw_area, unit_label)
 
+    selected_set = set(selected_inventory_names)
+
+    selected_mix = []
+    if inventory_check.get("valid") and inventory_check.get("details"):
+        selected_mix = inventory_check["details"]
+
+    supplemented_mix = []
+    if selected_set:
+        prioritized = _prioritize_by_selection(base_mix, selected_set)
+        supplemented_mix = [
+            mix
+            for mix in prioritized
+            if ({name.strip() for name in mix["Source"].split("+")} & selected_set)
+            and ({name.strip() for name in mix["Source"].split("+")} - selected_set)
+        ][: rules["constraints"]["max_combinations"]]
+
+    if not selected_set:
+        selection_status = "none"
+    elif selected_mix:
+        selection_status = "sufficient"
+    elif supplemented_mix:
+        selection_status = "supplementable"
+    else:
+        selection_status = "insufficient"
+
     return {
         "selected_crop_label": crop_label,
         "selected_crop": selected_crop,
@@ -501,5 +526,27 @@ def build_recommendation(
             "has_k": has_k,
             "missing_nutrients": missing_nutrients,
         },
+        "selection_status": selection_status,
+        "farmer_selected_mix": selected_mix,
+        "farmer_supplemented_mix": supplemented_mix,
         "standard_mix": base_mix,
     }
+
+
+def _prioritize_by_selection(mixes, selected_set):
+    """Sort mixes so those using the most farmer-selected fertilizers come first.
+
+    Args:
+        mixes: List of solver mix dictionaries.
+        selected_set: Set of fertilizer names selected by the user.
+
+    Returns:
+        list: Mixes sorted by descending count of selected fertilizers used,
+        then by ascending total weight.
+    """
+
+    def sort_key(mix):
+        names = {name.strip() for name in mix["Source"].split("+")}
+        return (-len(names & selected_set), mix["Total Weight"])
+
+    return sorted(mixes, key=sort_key)

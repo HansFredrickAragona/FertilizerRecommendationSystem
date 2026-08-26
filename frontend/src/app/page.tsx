@@ -17,6 +17,143 @@ type HistoryEntry = {
   result: RecommendationResponse;
 };
 
+function renderMix(mix: RecommendationResponse["standard_mix"]) {
+  if (!mix || mix.length === 0) {
+    return <p>No combinations found.</p>;
+  }
+  return (
+    <table className="mix-table">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>Prescription</th>
+          <th>Total (kg)</th>
+          <th>Sacks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {mix.map((entry) => (
+          <tr key={entry.Source}>
+            <td>{entry.Source}</td>
+            <td>
+              <ul>
+                {entry.Prescription.map((line) => (
+                  <li key={line}>{line.trim()}</li>
+                ))}
+              </ul>
+            </td>
+            <td>{entry["Total Weight"].toFixed(2)}</td>
+            <td>{entry["Total Sacks"].toFixed(3)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function ResultCard({ result }: { result: RecommendationResponse }) {
+  return (
+    <section className="card results">
+      <h2>
+        Recommendations — {result.selected_crop_label} ({result.raw_area}{" "}
+        {result.unit_label})
+      </h2>
+
+      <p className="npk-targets">
+        Target per hectare: N {result.base_targets_per_ha["N"]} · P{" "}
+        {result.base_targets_per_ha["P"]} · K {result.base_targets_per_ha["K"]}{" "}
+        | Total for plot: N {result.total_base["N"]} · P{" "}
+        {result.total_base["P"]} · K {result.total_base["K"]}
+      </p>
+
+      <div className={`ph-box ph-${result.ph_result.ph_status}`} role="status">
+        <strong>Soil pH ({result.ph_result.soil_ph}):</strong>{" "}
+        {result.ph_result.recommendation_message}
+        {result.ph_result.borderline_warning &&
+          result.ph_result.borderline_message && (
+            <p className="ph-warning">
+              {result.ph_result.borderline_message}
+            </p>
+          )}
+      </div>
+
+      {result.selection_status !== "none" && (
+        <div
+          className={`selection-banner selection-${result.selection_status}`}
+          role="alert"
+        >
+          {result.selection_status === "sufficient" && (
+            <p>
+              <strong>Good news:</strong> your selected fertilizers (
+              {result.user_inventory.map((f) => f.name).join(", ")}) can fully
+              meet the NPK targets on their own.
+            </p>
+          )}
+          {result.selection_status === "supplementable" && (
+            <>
+              <p>
+                <strong>Notice:</strong> your selected fertilizers (
+                {result.user_inventory.map((f) => f.name).join(", ")}) cannot
+                fulfill the NPK targets alone, but they can be combined with
+                one or more additional fertilizers. See the supplemented
+                combinations below.
+              </p>
+              {result.inventory_sufficiency.missing_nutrients.length > 0 && (
+                <p>
+                  Your selection does not cover:{" "}
+                  {result.inventory_sufficiency.missing_nutrients.join(", ")}.
+                </p>
+              )}
+            </>
+          )}
+          {result.selection_status === "insufficient" && (
+            <p>
+              <strong>Warning:</strong> your selected fertilizers (
+              {result.user_inventory.map((f) => f.name).join(", ")}) are not
+              sufficient to fulfill the NPK targets, even with supplements.
+              Please review the standard recommendations instead.
+              {result.inventory_sufficiency.missing_nutrients.length > 0 && (
+                <>
+                  {" "}
+                  Missing coverage:{" "}
+                  {result.inventory_sufficiency.missing_nutrients.join(", ")}.
+                </>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {result.farmer_selected_mix.length > 0 && (
+        <>
+          <h3>Your selected fertilizers</h3>
+          {renderMix(result.farmer_selected_mix)}
+        </>
+      )}
+
+      {result.farmer_supplemented_mix.length > 0 && (
+        <>
+          <h3>Your selections + supplemental fertilizers</h3>
+          <p className="section-note">
+            Ordered by the most use of your selected fertilizers first, then by
+            lowest total weight.
+          </p>
+          {renderMix(result.farmer_supplemented_mix)}
+        </>
+      )}
+
+      <h3>Standard recommendations</h3>
+      {renderMix(result.standard_mix)}
+
+      <p className="disclaimer">
+        Disclaimer: This tool is a decision-support prototype designed for CAR
+        produce and land conditions. Results are educational guidance only —
+        consult a qualified agriculturist before applying fertilizer.
+      </p>
+    </section>
+  );
+}
+
 export default function Home() {
   const [catalog, setCatalog] = useState<Awaited<
     ReturnType<typeof fetchCatalog>
@@ -36,6 +173,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RecommendationResponse | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [printQueue, setPrintQueue] = useState<HistoryEntry[] | null>(null);
 
   useEffect(() => {
     fetchCatalog()
@@ -54,6 +195,13 @@ export default function Home() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [history]);
+
+  useEffect(() => {
+    if (!printQueue) return;
+    const handler = () => setPrintQueue(null);
+    window.addEventListener("afterprint", handler);
+    return () => window.removeEventListener("afterprint", handler);
+  }, [printQueue]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -74,17 +222,13 @@ export default function Home() {
       };
       const data = await fetchRecommendation(payload);
       setResult(data);
-      setHistory((prev) =>
-        [
-          {
-            id: `${Date.now()}`,
-            at: new Date().toLocaleTimeString(),
-            request: payload,
-            result: data,
-          },
-          ...prev,
-        ].slice(0, 20),
-      );
+      const entry: HistoryEntry = {
+        id: `${Date.now()}`,
+        at: new Date().toLocaleTimeString(),
+        request: payload,
+        result: data,
+      };
+      setHistory((prev) => [entry, ...prev].slice(0, 20));
     } catch (exc) {
       setError(exc instanceof Error ? exc.message : String(exc));
     } finally {
@@ -100,47 +244,31 @@ export default function Home() {
     );
   }
 
-  function exportPdf() {
-    window.print();
+  function toggleHistorySelection(id: string) {
+    setSelectedHistoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }
 
-  function renderMix(mix: RecommendationResponse["standard_mix"]) {
-    if (!mix || mix.length === 0) {
-      return <p>No combinations found.</p>;
-    }
-    return (
-      <table className="mix-table">
-        <thead>
-          <tr>
-            <th>Source</th>
-            <th>Prescription</th>
-            <th>Total (kg)</th>
-            <th>Sacks</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mix.map((entry) => (
-            <tr key={entry.Source}>
-              <td>{entry.Source}</td>
-              <td>
-                <ul>
-                  {entry.Prescription.map((line) => (
-                    <li key={line}>{line.trim()}</li>
-                  ))}
-                </ul>
-              </td>
-              <td>{entry["Total Weight"].toFixed(2)}</td>
-              <td>{entry["Total Sacks"].toFixed(3)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
+  function exportSessions(entries: HistoryEntry[]) {
+    if (entries.length === 0) return;
+    setPrintQueue(entries);
+    setTimeout(() => window.print(), 100);
+  }
+
+  function entryLabel(entry: HistoryEntry) {
+    return `${entry.request.crop_label} — ${entry.request.soil_ph} pH, ${entry.request.raw_area} ${entry.request.area_unit.includes("Hectare") ? "ha" : "sqm"}, ${entry.request.selected_inventory_names?.length ?? 0} selected`;
   }
 
   return (
     <main className="page">
-      <header className="header">
+      <header className="header no-print">
         <h1>Fertilizer Recommendation System</h1>
         <p className="subtitle">
           Decision-support prototype designed for CAR (Cordillera
@@ -149,7 +277,7 @@ export default function Home() {
       </header>
 
       {catalogError && (
-        <p className="error-banner" role="alert">
+        <p className="error-banner no-print" role="alert">
           Could not reach the API: {catalogError}
         </p>
       )}
@@ -157,7 +285,7 @@ export default function Home() {
       {!catalogError && !catalog && <p>Loading catalog…</p>}
 
       {catalog && (
-        <form className="card form" onSubmit={submit}>
+        <form className="card form no-print" onSubmit={submit}>
           <label>
             Crop
             <select
@@ -256,74 +384,15 @@ export default function Home() {
       )}
 
       {error && (
-        <p className="error-banner" role="alert">
+        <p className="error-banner no-print" role="alert">
           {error}
         </p>
       )}
 
-      {result && (
-        <section className="card results" id="results">
-          <div className="results-header">
-            <h2>
-              Recommendations — {result.selected_crop_label} (
-              {result.raw_area} {result.unit_label})
-            </h2>
-            <button type="button" onClick={exportPdf}>
-              Export PDF
-            </button>
-          </div>
-
-          <p className="npk-targets">
-            Target per hectare: N {result.base_targets_per_ha["N"]} · P{" "}
-            {result.base_targets_per_ha["P"]} · K{" "}
-            {result.base_targets_per_ha["K"]} | Total for plot: N{" "}
-            {result.total_base["N"]} · P {result.total_base["P"]} · K{" "}
-            {result.total_base["K"]}
-          </p>
-
-          <div
-            className={`ph-box ph-${result.ph_result.ph_status}`}
-            role="status"
-          >
-            <strong>Soil pH ({result.ph_result.soil_ph}):</strong>{" "}
-            {result.ph_result.recommendation_message}
-            {result.ph_result.borderline_warning &&
-              result.ph_result.borderline_message && (
-                <p className="ph-warning">
-                  {result.ph_result.borderline_message}
-                </p>
-              )}
-          </div>
-
-          {result.inventory_check && !result.inventory_check.valid && (
-            <p className="ph-warning" role="alert">
-              Selected inventory issue: {result.inventory_check.reason}
-            </p>
-          )}
-          {result.inventory_sufficiency &&
-            result.inventory_sufficiency.missing_nutrients.length > 0 && (
-              <p className="ph-warning">
-                Your selection does not cover:{" "}
-                {result.inventory_sufficiency.missing_nutrients.join(", ")}.
-              </p>
-            )}
-
-          {result.farmer_selected_mix && (
-            <>
-              <h3>Your selected fertilizers</h3>
-              {renderMix(result.farmer_selected_mix)}
-            </>
-          )}
-
-          <h3>Standard recommendations</h3>
-          {renderMix(result.standard_mix)}
-
-          <p className="disclaimer">
-            Disclaimer: This tool is a decision-support prototype designed for
-            CAR produce and land conditions. Results are educational guidance
-            only — consult a qualified agriculturist before applying fertilizer.
-          </p>
-        </section>
+      {result && !printQueue && (
+        <div className="results-wrapper">
+          <ResultCard result={result} />
+        </div>
       )}
 
       {history.length > 0 && (
@@ -331,22 +400,73 @@ export default function Home() {
           <h2>Session history</h2>
           <p className="history-note">
             History is stored only in this browser session and is lost when the
-            tab closes. Export results as PDF to keep them.
+            tab closes. Select sessions below to export them as PDF.
           </p>
           <ul>
             {history.map((entry) => (
-              <li key={entry.id}>
-                <button
-                  type="button"
-                  onClick={() => setResult(entry.result)}
-                >
-                  {entry.at}: {entry.request.crop_label} — {entry.request.soil_ph} pH,{" "}
-                  {entry.request.raw_area} sqm
-                </button>
+              <li key={entry.id} className="history-item">
+                <label className="history-select">
+                  <input
+                    type="checkbox"
+                    checked={selectedHistoryIds.has(entry.id)}
+                    onChange={() => toggleHistorySelection(entry.id)}
+                  />
+                  <span>
+                    {entry.at}: {entryLabel(entry)}
+                  </span>
+                </label>
+                <span className="history-actions">
+                  <button
+                    type="button"
+                    onClick={() => setResult(entry.result)}
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exportSessions([entry])}
+                  >
+                    Export
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
+          <div className="history-bulk">
+            <button
+              type="button"
+              disabled={selectedHistoryIds.size === 0}
+              onClick={() =>
+                exportSessions(
+                  history.filter((entry) => selectedHistoryIds.has(entry.id)),
+                )
+              }
+            >
+              Export selected ({selectedHistoryIds.size})
+            </button>
+            <button type="button" onClick={() => exportSessions(history)}>
+              Export all ({history.length})
+            </button>
+          </div>
         </section>
+      )}
+
+      {printQueue && (
+        <div className="print-area">
+          <h1>Fertilizer Recommendation System — Exported Results</h1>
+          <p>
+            Exported {new Date().toLocaleString()} · {printQueue.length}{" "}
+            session{printQueue.length > 1 ? "s" : ""}
+          </p>
+          {printQueue.map((entry) => (
+            <div key={entry.id} className="print-entry">
+              <p className="print-entry-label">
+                Session at {entry.at}: {entryLabel(entry)}
+              </p>
+              <ResultCard result={entry.result} />
+            </div>
+          ))}
+        </div>
       )}
     </main>
   );
