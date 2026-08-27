@@ -55,11 +55,22 @@ def get_project_root() -> Path:
     directory containing the expected "data" folder. It ensures the rest of
     the app can reliably load JSON assets from the rule-based data directory.
 
+    In Vercel serverless deployment, the rules are copied to api/rules/.
+    In local development, rules are at repo_root/rules/.
+
     Returns:
         Path: The rules directory containing the JSON rule files.
     """
     current = Path(__file__).resolve()
-    return current.parent.parent / "rules"
+    repo_rules = current.parent.parent / "rules"
+    if repo_rules.exists():
+        return repo_rules
+    # Vercel deployment: rules copied to api/rules/
+    api_rules = current.parent.parent / "api" / "rules"
+    if api_rules.exists():
+        return api_rules
+    # Fallback to repo root
+    return repo_rules
 
 
 def load_assets():

@@ -1,0 +1,29 @@
+{
+  "engine_logic": {
+    "calculation_steps": [
+      {
+        "step": 1,
+        "action": "IDENTIFY_LIMITING_NUTRIENT",
+        "description": "Determine which nutrient in a compound fertilizer reaches the target first to prevent over-fertilization."
+      },
+      {
+        "step": 2,
+        "action": "SOLVE_FOR_PHOSPHORUS",
+        "priority": "HIGH",
+        "reasoning": "P-sources are often fixed compounds; solve P first then top up N and K."
+      },
+      {
+        "step": 3,
+        "action": "CALCULATE_REMAINDER",
+        "formula": "Target_Nutrient - (Fertilizer_Qty * Nutrient_Percentage / 100)"
+      }
+    ],
+    "constraints": {
+      "allow_over_fertilization": false,
+      "max_combinations": 10,
+      "precision_decimals": 4 ,
+      "sack_size_kg": 50
+    },
+    "output_format": " {sacks} sack/s per {area} {unit}  or {qty} kg/{area} {unit}of {fertilizer_name}"
+  }
+}

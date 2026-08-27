@@ -1,0 +1,18 @@
+{
+  "inventory": [
+    {"name": "Urea", "n": 46, "p": 0, "k": 0},
+    {"name": "T-14 (Complete)", "n": 14, "p": 14, "k": 14},
+    {"name": "Muriate of Potash", "n": 0, "p": 0, "k": 60},
+    {"name": "Ammonium Phosphate", "n": 16, "p": 20, "k": 0},
+    {"name": "Nitrabor", "n": 15.4, "p": 0, "k": 0},
+    {"name": "Yara Mila Winner (15-9-20)", "n": 15, "p": 9, "k": 20},
+    {"name": "Yara Mila Palme (13-33-21)", "n": 13, "p": 33, "k": 21},
+    {"name": "Yara Unik (16-16-16)", "n": 16, "p": 16, "k": 16},
+    {"name": "Yara Mila Grower (13-31-21)", "n": 13, "p": 31, "k": 21},
+    {"name": "Yara Mila Hydran (19-4-19)", "n": 19, "p": 4, "k": 19},
+    {"name": "Solophos (18)", "n": 0, "p": 18, "k": 0},
+    {"name": "Super phosphate(20)", "n": 0, "p": 20, "k": 0},
+    {"name": "Duofos (22)", "n": 0, "p": 22, "k": 0},
+    {"name": "Ammonium Sulfate", "n": 21, "p": 0, "k": 0}
+  ]
+}
