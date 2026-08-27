@@ -37,15 +37,19 @@ All validation passing. Changes not yet committed.
   sets rendered as tables, pH guidance box, loading/error states, CAR
   disclaimer, session-only history with tab-close warning, print-based PDF
   export.
+- UI redesign (bb2cde4): iOS-style minimalism, compact horizontal form
+  layout (NPK/area/pH side-by-side), button-style fertilizer selection
+  with selected-state color change, multi-session PDF export (current/all/selected).
+- Engine enhancements: `farmer_selected_mix`, `farmer_supplemented_mix`,
+  `selection_status` (sufficient/supplementable/insufficient/none).
 
 ## Known issues / next steps
 
-1. Owner review of the UI; commit/push approval pending.
-2. Add Streamlit to requirements.txt (approval required).
-3. Unit convention confirmed: rules use elemental P/K (per Benguet State
+1. Add Streamlit to requirements.txt (approval required).
+2. Unit convention confirmed: rules use elemental P/K (per Benguet State
    University reference); fertilizer grades are %N-%P-%K.
-4. Before deployment: add production Vercel origin to CORS allowlist.
-5. Optional polish: sessionStorage-backed history, richer PDF export.
+3. Before deployment: add production Vercel origin to CORS allowlist.
+4. Optional polish: sessionStorage-backed history, richer PDF export.
 
 ## Validation results
 

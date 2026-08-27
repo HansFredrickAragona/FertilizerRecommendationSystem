@@ -1,0 +1,59 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.3 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.241.158.99:3000
+✓ Ready in 1646ms
+⚠ Warning: Next.js ignored package-lock.json in C:\Users\Hans because it is outside the current Git repository (C:\Users\Hans\Downloads\Personal\CODE\FertilizerRecommendationSystem).
+ To use this directory, set `turbopack.root` in your Next.js config.
+
+✓ Running next.config.ts took 239ms
+
+ GET / 200 in 3.7s (next.js: 3.4s, application-code: 320ms)
+ GET / 200 in 365ms (next.js: 298ms, application-code: 67ms)
+✓ Compiled in 11ms
+ GET / 200 in 460ms (next.js: 259ms, application-code: 201ms)
+[browser] Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    at Home (src/app/page.tsx:354:39)
+  352 |           )}
+  353 |
+> 354 |           {result.farmer_selected_mix.length > 0 && (
+      |                                       ^
+  355 |             <>
+  356 |               <h3>Your selected fertilizers</h3>
+  357 |               {renderMix(result.farmer_selected_mix)}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+✓ Compiled in 107ms
+ GET / 200 in 142ms (next.js: 12ms, application-code: 130ms)
+[browser] Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    at Home (src/app/page.tsx:354:39)
+  352 |           )}
+  353 |
+> 354 |           {result.farmer_selected_mix.length > 0 && (
+      |                                       ^
+  355 |             <>
+  356 |               <h3>Your selected fertilizers</h3>
+  357 |               {renderMix(result.farmer_selected_mix)}
+ GET / 200 in 584ms (next.js: 194ms, application-code: 390ms)
+✓ Compiled in 374ms
+✓ Compiled in 209ms
+✓ Compiled in 62ms
+ GET / 200 in 1443ms (next.js: 1126ms, application-code: 317ms)
+ GET / 200 in 66ms (next.js: 22ms, application-code: 44ms)
+✓ Compiled in 483ms
+ GET / 200 in 581ms (next.js: 299ms, application-code: 281ms)
+✓ Compiled in 85ms
+ GET / 200 in 393ms (next.js: 150ms, application-code: 243ms)
+✓ Compiled in 370ms
+✓ Compiled in 322ms
+ GET / 200 in 279ms (next.js: 139ms, application-code: 140ms)
+✓ Compiled in 108ms
+ GET / 200 in 1885ms (next.js: 534ms, application-code: 1351ms)
+✓ Compiled in 178ms
+✓ Compiled in 68ms
+✓ Compiled in 117ms
+✓ Compiled in 85ms
+✓ Compiled in 34ms
+ GET / 200 in 1287ms (next.js: 468ms, application-code: 819ms)

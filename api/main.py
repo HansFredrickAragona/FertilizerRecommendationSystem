@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -6,9 +8,10 @@ from engine.core import build_recommendation, load_assets
 
 app = FastAPI(title="Rule-Based Fertilizer Recommendation API")
 
+allowed_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[allowed_origin],
     allow_methods=["*"],
     allow_headers=["*"],
 )
